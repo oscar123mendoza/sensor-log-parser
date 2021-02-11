@@ -1,0 +1,4 @@
+numpy
+flask
+Werkzeug
+flask-healthz

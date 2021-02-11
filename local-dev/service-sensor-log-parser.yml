@@ -1,0 +1,82 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sensor-log-parser
+  name: sensor-log-parser
+  annotations:
+   configuration.konghq.com: sensor-log-parser
+spec: 
+  ports: 
+    - name: tcp
+      port: 8081
+      targetPort: 5000
+      protocol: TCP
+  selector: 
+    app: sensor-log-parser
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: sensor-log-parser
+  labels:
+    app: sensor-log-parser
+spec: 
+  selector:
+    matchLabels:
+      app: sensor-log-parser
+  replicas: 3
+  template: 
+    metadata: 
+      labels: 
+        app: sensor-log-parser
+    spec: 
+      containers: 
+        - name: sensor-log-parser
+          ports: 
+            - containerPort: 5000
+          image: "localhost:5000/sensor-log-parser:latest"
+          imagePullPolicy: Never
+          livenessProbe: 
+            httpGet: 
+              path: /api/sensor-log-parser/healthz
+              port: 5000
+            initialDelaySeconds: 90
+            timeoutSeconds: 45
+          readinessProbe: 
+            httpGet: 
+              path: /api/sensor-log-parser/healthz
+              port: 5000
+            initialDelaySeconds: 90
+            timeoutSeconds: 45
+          env:
+            - name: "SENSOR_PATTERN"
+              valueFrom:
+                configMapKeyRef:
+                  name: default
+                  key: python.sensor_pattern
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts: 
+            - name: "default-configmap"
+              mountPath: "/var/run/configmap/kubernetes.io/default"              
+      volumes: 
+        - name: default-configmap
+          configMap:
+            name: default
+

@@ -1,0 +1,8 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: default
+  creationTimestamp: null
+data:
+  python.sensor_pattern: 'thermometer temp-, humidity hum-'
